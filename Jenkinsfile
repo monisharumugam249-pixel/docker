@@ -1,51 +1,30 @@
 pipeline {
     agent any
-    tools {
-        maven 'maven3.9'
+    environment {
+        AWS_REGION = 'ap-south-1'
+        ECR_REPO   = '547268988607.dkr.ecr.ap-south-1.amazonaws.com/samplewebapp'
+        IMAGE_TAG  = "${BUILD_NUMBER}"
     }
     stages {
-        stage('Checkout the code') {
+        stage('Build') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/monisharumugam249-pixel/docker.git'
+                sh 'docker build -t samplewebapp:${IMAGE_TAG} .'
             }
         }
-        stage('Package the build') {
-            steps {
-                sh 'mvn clean package -DskipTests'
-            }
-        }
-       stage('Build Docker Image') {
-    steps {
-        sh 'docker build -t my-repo .'
-         }
-    }
-        
-        stage('Push and pull the image to the ECR and run the Container') {
+        stage('Push to ECR and run') {
             steps {
                 sh '''
+                    aws ecr get-login-password --region $AWS_REGION | \
+                      docker login --username AWS --password-stdin 547268988607.dkr.ecr.ap-south-1.amazonaws.com
 
-                # Stop and remove old container if exists
-                docker rm -f my-app-container || true
+                    docker tag samplewebapp:${IMAGE_TAG} $ECR_REPO:${IMAGE_TAG}
+                    docker tag samplewebapp:${IMAGE_TAG} $ECR_REPO:latest
+                    docker push $ECR_REPO:${IMAGE_TAG}
+                    docker push $ECR_REPO:latest
 
-                # Tag image with ECR repo path
-                docker tag samplewebapp:latest 547268988607.dkr.ecr.ap-south-1.amazonaws.com/samplewebapp:latest
-
-                # Push image to ECR
-                docker push 547268988607.dkr.ecr.ap-south-1.amazonaws.com/samplewebapp:latest
-
-                # Pull image back from ECR
-                docker pull 547268988607.dkr.ecr.ap-south-1.amazonaws.com/samplewebapp:latest
-
-                # Run new container
-                docker run -d -p 8082:8080 --name my-tomcat-app-container3 \
-                  547268988607.dkr.ecr.ap-south-1.amazonaws.com/samplewebapp
+                    docker rm -f my-app-container || true
+                    docker run -d --name my-app-container -p 8080:8080 $ECR_REPO:latest
                 '''
-                post {
-    always {
-        sh 'docker system prune -f'
-    }
-}
             }
         }
     }

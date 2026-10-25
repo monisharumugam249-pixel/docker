@@ -41,6 +41,11 @@ pipeline {
                 docker run -d -p 8082:8080 --name my-tomcat-app-container3 \
                   547268988607.dkr.ecr.ap-south-1.amazonaws.com/samplewebapp
                 '''
+                post {
+    always {
+        sh 'docker system prune -f'
+    }
+}
             }
         }
     }

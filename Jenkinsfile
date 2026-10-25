@@ -1,5 +1,17 @@
 pipeline {
     agent any
+    stages {
+        stage('Checkout the code') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Narasimha88-bot/Docker_Repo.git'
+            }
+        }
+        stage('Package the build') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
     environment {
         AWS_REGION = 'ap-south-1'
         ECR_REPO   = '547268988607.dkr.ecr.ap-south-1.amazonaws.com/samplewebapp'

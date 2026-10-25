@@ -23,7 +23,7 @@ pipeline {
                     docker push $ECR_REPO:latest
 
                     docker rm -f my-app-container || true
-                    docker run -d --name my-app-container -p 8080:8080 $ECR_REPO:latest
+                    docker run -d --name my-app-container -p 8081:8080 547268988607.dkr.ecr.ap-south-1.amazonaws.com/samplewebapp:latest
                 '''
             }
         }
